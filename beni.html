@@ -1,0 +1,503 @@
+<title>Beni</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two-column workbench — the brief on the left like a chart clipboard, the draft on the right as a printed page. Stacks on phones. */
+:root{
+  --bg:#EEF2F1; --panel:#FFFFFF; --page:#FFFFFF; --ink:#16242A; --muted:#5B6B70;
+  --line:#D3DCDA; --accent:#1C6B5A; --accent-ink:#FFFFFF; --soft:#E2EEEA; --flag:#B5452F; --pulse:#9FE3CF;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --ui:system-ui, "Segoe UI", Roboto, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1719; --panel:#162124; --page:#1A2629; --ink:#E4ECEA; --muted:#93A5A8;
+  --line:#2B3B3F; --accent:#4DB89C; --accent-ink:#0B1A16; --soft:#1F3330; --flag:#E58A73; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0F1719; --panel:#162124; --page:#1A2629; --ink:#E4ECEA; --muted:#93A5A8;
+  --line:#2B3B3F; --accent:#4DB89C; --accent-ink:#0B1A16; --soft:#1F3330; --flag:#E58A73; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 40px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:48px;height:48px;flex:none;display:block}
+h1{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:0;letter-spacing:-.01em}
+.tag{color:var(--muted);margin:4px 0 0;font-size:14px}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.03em}
+
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:16px;min-width:0}
+.label{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:6px}
+textarea,input,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+textarea{resize:vertical;min-height:120px;line-height:1.45}
+#notes{min-height:72px}
+textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+
+.modes{display:flex;flex-wrap:wrap;gap:6px}
+.modes button{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13.5px;cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);cursor:pointer;font-size:14px}
+.drop.over{border-color:var(--accent);background:var(--soft)}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--soft);border-radius:999px;padding:4px 6px 4px 10px;font-size:13px;max-width:100%}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px}
+
+.btn{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hint{color:var(--muted);font-size:13px;margin:0}
+
+/* Draft page */
+.paper{background:var(--page);border:1px solid var(--line);border-radius:6px;box-shadow:0 1px 0 var(--line),0 12px 30px -18px rgba(10,30,30,.35);min-width:0}
+.paperbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.doc{font-family:var(--body);font-size:17px;line-height:1.65;padding:32px clamp(18px,5vw,56px) 44px;min-height:420px;outline:none;overflow-wrap:anywhere}
+.doc>*{max-width:68ch}
+.doc h1{font-family:var(--body);font-weight:600;font-size:26px;line-height:1.25;margin:0 0 18px;text-wrap:balance}
+.doc h2{font-family:var(--body);font-weight:600;font-size:19px;margin:26px 0 8px;text-wrap:balance}
+.doc h3{font-size:17px;margin:18px 0 6px}
+.doc p{margin:0 0 14px}
+.doc ul,.doc ol{margin:0 0 14px;padding-left:24px}
+.doc table{border-collapse:collapse;font-size:15px;display:block;overflow-x:auto;margin:0 0 14px}
+.doc td,.doc th{border:1px solid var(--line);padding:6px 9px;vertical-align:top}
+.doc .verify,.doc mark{background:transparent;color:var(--flag);font-weight:600}
+.example{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--flag);border:1px solid var(--flag);border-radius:4px;padding:2px 6px}
+.thinking{color:var(--muted);font-style:italic}
+.revise{display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.revise input{flex:1 1 220px;min-width:0}
+.wc{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted);border-left:3px solid var(--accent);padding:2px 0 2px 10px;margin:0}
+@media (prefers-reduced-motion:no-preference){.btn,.modes button{transition:background .15s,border-color .15s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="16" fill="var(--accent)"/>
+        <path d="M19 14 V50 H35 a9 9 0 0 0 0-18 H19 M19 32 H33 a9 9 0 0 0 0-18 H19" fill="none" stroke="var(--accent-ink)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M36 32 h8 l3 -9 l4 18 l3 -9 h4" fill="none" stroke="var(--pulse)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1>Beni</h1>
+        <p class="tag">Medical and nursing assistant. Ask anything, or upload an assignment and get a clear draft to save as a PDF.</p>
+      </div>
+    </div>
+    <div class="status" id="status">Ready</div>
+  </header>
+
+  <div class="grid">
+    <!-- Brief -->
+    <section class="panel" aria-label="Assignment">
+      <div>
+        <span class="label">What do you need</span>
+        <div class="modes" id="modes" role="group" aria-label="Task type">
+          <button type="button" data-mode="ask" aria-pressed="true">Ask anything</button>
+          <button type="button" data-mode="answer" aria-pressed="false">Answer questions</button>
+          <button type="button" data-mode="essay" aria-pressed="false">Essay / paper</button>
+          <button type="button" data-mode="careplan" aria-pressed="false">Care plan</button>
+          <button type="button" data-mode="case" aria-pressed="false">Case study</button>
+          <button type="button" data-mode="reflection" aria-pressed="false">Reflection</button>
+          <button type="button" data-mode="explain" aria-pressed="false">Explain it to me</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="label" for="question">Question or assignment instructions</label>
+        <textarea id="question">Explain the nursing priorities for a patient with heart failure who has been admitted with fluid volume overload. Include assessment findings, two nursing diagnoses, and interventions with rationales.</textarea>
+      </div>
+
+      <div>
+        <span class="label">Upload the assignment (PDF, text or photos)</span>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload files">Drop files here or tap to choose</div>
+        <input type="file" id="file" accept=".pdf,.txt,.md,image/png,image/jpeg,image/webp" multiple hidden>
+        <div class="files" id="files"></div>
+      </div>
+
+      <div>
+        <label class="label" for="notes">Her own points to include (optional)</label>
+        <textarea id="notes" placeholder="Things from class, clinical placement, or the lecturer's hints. Beni builds these in so it sounds like her."></textarea>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="label" for="words">Length</label>
+          <select id="words">
+            <option value="300">~300 words</option>
+            <option value="600" selected>~600 words</option>
+            <option value="1000">~1,000 words</option>
+            <option value="1500">~1,500 words</option>
+            <option value="2500">~2,500 words</option>
+            <option value="match">Match the brief</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="cite">References</label>
+          <select id="cite">
+            <option value="APA 7th edition" selected>APA 7</option>
+            <option value="Harvard">Harvard</option>
+            <option value="Vancouver">Vancouver</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="level">Year</label>
+          <select id="level">
+            <option value="first-year">Year 1</option>
+            <option value="second-year" selected>Year 2</option>
+            <option value="third-year">Year 3</option>
+            <option value="final-year">Final year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="go" type="button">Ask Beni</button>
+        <button class="btn ghost" id="stop" type="button" hidden>Stop</button>
+      </div>
+      <p class="note">Read it through and put it in her own words before handing it in. She'll need this knowledge for exams and on the ward, and most nursing schools treat submitted AI work as misconduct.</p>
+    </section>
+
+    <!-- Draft -->
+    <section class="paper" aria-label="Draft">
+      <div class="paperbar">
+        <div class="actions"><span class="example" id="exampleTag">Example draft</span><span class="wc" id="wc"></span></div>
+        <div class="actions">
+          <button class="btn ghost" id="copy" type="button">Copy</button>
+          <button class="btn" id="pdf" type="button">Save as PDF</button>
+        </div>
+      </div>
+      <article class="doc" id="doc" contenteditable="true" spellcheck="true" aria-label="Draft text, editable"></article>
+      <div class="revise">
+        <label class="label" for="change" id="changeLabel" style="flex-basis:100%;margin:0">Ask a follow-up</label>
+        <input id="change" placeholder="e.g. what would the potassium level be? explain it more simply">
+        <button class="btn ghost" id="redo" type="button">Ask</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const statusEl = $("#status"), doc = $("#doc");
+let mode = "ask", turns = [], prefix = "", attachments = [], draftMd = "", ctl = null, sample = null, downloads = null;
+
+const EXAMPLE = `# Nursing Priorities in Heart Failure with Fluid Volume Overload
+
+When a patient with heart failure comes in with fluid overload, the heart can't keep up with the volume it's being asked to move. Fluid backs up into the lungs and the tissues, and the patient usually feels it first as breathlessness. My priorities are breathing, fluid balance, and keeping a close eye on how the heart is coping.
+
+## Assessment findings
+
+The patient will often be short of breath, worse when lying flat, and may wake at night gasping. On auscultation I'd expect crackles at the lung bases. Other signs include pitting oedema in the ankles or sacrum, raised jugular venous pressure, a weight gain of more than 2 kg over a few days, and reduced urine output. Oxygen saturation may be low, and the patient may be anxious or tired.
+
+## Nursing diagnoses
+
+1. **Excess fluid volume** related to reduced cardiac output and sodium and water retention, as shown by oedema, crackles and weight gain.
+2. **Impaired gas exchange** related to fluid in the alveoli, as shown by dyspnoea and low SpO₂.
+
+## Interventions and rationales
+
+Sit the patient upright. This lets the diaphragm move more freely and reduces venous return, which eases the work of breathing. Give oxygen as prescribed to keep saturations in the target range.
+
+Give IV loop diuretics such as furosemide as prescribed, then monitor urine output and serum potassium [verify local protocol], because diuretics can cause hypokalaemia and arrhythmias...`;
+
+/* ---------- rendering ---------- */
+function render(md){
+  const html = DOMPurify.sanitize(marked.parse(md || ""));
+  doc.innerHTML = prefix + html.replace(/\[verify[^\]]*\]/gi, m => `<mark>${m}</mark>`);
+  countWords();
+}
+function countWords(){
+  const n = (doc.innerText.match(/\S+/g) || []).length;
+  $("#wc").textContent = n ? n.toLocaleString() + " words" : "";
+}
+doc.addEventListener("input", () => { countWords(); saveLocal(); });
+
+function saveLocal(){ try{ localStorage.setItem("beni.draft", doc.innerHTML); localStorage.setItem("beni.md", draftMd); }catch(e){} }
+function loadLocal(){ try{ const h = localStorage.getItem("beni.draft"); if(h){ doc.innerHTML = DOMPurify.sanitize(h); draftMd = localStorage.getItem("beni.md") || ""; $("#exampleTag").hidden = true; countWords(); return true; } }catch(e){} return false; }
+if(!loadLocal()) render(EXAMPLE);
+
+/* ---------- modes ---------- */
+$("#modes").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  mode = b.dataset.mode;
+  document.querySelectorAll("#modes button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $("#go").textContent = mode === "ask" ? "Ask Beni" : mode === "explain" ? "Explain it" : "Write draft";
+  setFollowUp();
+});
+function setFollowUp(){
+  const chat = mode === "ask" || mode === "explain";
+  $("#changeLabel").textContent = chat ? "Ask a follow-up" : "Change something";
+  $("#change").placeholder = chat ? "e.g. what would the potassium level be? explain it more simply" : "e.g. make it shorter, add a part on patient education, simpler words";
+  $("#redo").textContent = chat ? "Ask" : "Revise";
+}
+
+/* ---------- uploads ---------- */
+const drop = $("#drop"), fileInput = $("#file");
+drop.onclick = () => fileInput.click();
+drop.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); fileInput.click(); } };
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); addFiles(e.dataTransfer.files); };
+fileInput.onchange = () => { addFiles(fileInput.files); fileInput.value = ""; };
+
+if (window.pdfjsLib && window.pdfjsWorker) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+async function readPdf(file){
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  let out = [];
+  for(let i = 1; i <= Math.min(pdf.numPages, 60); i++){
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    out.push(tc.items.map(it => it.str + (it.hasEOL ? "\n" : " ")).join(""));
+  }
+  return out.join("\n\n").replace(/[ \t]+/g, " ").trim();
+}
+
+async function addFiles(list){
+  for(const f of list){
+    const item = { name: f.name, kind: "", text: "", blob: null };
+    try{
+      if(f.type.startsWith("image/")){ item.kind = "image"; item.blob = f; }
+      else if(f.type === "application/pdf" || /\.pdf$/i.test(f.name)){
+        setStatus("Reading " + f.name + "…");
+        item.kind = "pdf"; item.text = await readPdf(f);
+        if(!item.text) item.note = "no text found (scanned?) — try a photo instead";
+      } else { item.kind = "text"; item.text = await f.text(); }
+      attachments.push(item);
+    }catch(err){ setStatus("Couldn't read " + f.name); console.error(err); continue; }
+  }
+  setStatus("Ready"); drawFiles();
+}
+function drawFiles(){
+  const box = $("#files"); box.innerHTML = "";
+  attachments.forEach((a, i) => {
+    const c = document.createElement("div"); c.className = "chip";
+    const s = document.createElement("span");
+    s.textContent = a.name + (a.kind === "pdf" ? ` · ${(a.text.match(/\S+/g)||[]).length} words` : "") + (a.note ? " · " + a.note : "");
+    const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove " + a.name);
+    x.onclick = () => { attachments.splice(i, 1); drawFiles(); };
+    c.append(s, x); box.append(c);
+  });
+}
+
+/* ---------- prompt ---------- */
+const TASKS = {
+  answer: "Answer each question in the brief in order. Use a short heading or the question number for each, and answer in full paragraphs.",
+  essay: "Write an academic essay with a title, a short introduction that sets out the argument, body sections with headings, and a conclusion that sums up without repeating word for word.",
+  careplan: "Write a nursing care plan using the nursing process (assessment, diagnosis, planning, implementation, evaluation). Use NANDA-I style diagnoses with related-to and as-evidenced-by, SMART goals, and interventions each followed by a rationale. A Markdown table is fine for the plan itself, with short prose around it.",
+  case: "Write a case study analysis: summary of the patient, assessment and key findings, pathophysiology in plain terms, nursing priorities, interventions with rationales, and evaluation. Link findings to the patient in the case.",
+  reflection: "Write a reflective piece in the first person using Gibbs' reflective cycle (description, feelings, evaluation, analysis, conclusion, action plan), unless the brief names another model. Keep it personal and specific, and use the student's notes as the real experience. Do not invent a clinical event that is not in the brief or notes; where details are missing, write a placeholder like [add what happened].",
+  explain: "Teach this to the student instead of writing the assignment. Explain the key ideas like you're talking to a friend with no medical background, using everyday comparisons, give a memorable way to think about each, point out common exam traps, and finish with 5 practice questions with answers at the end."
+};
+
+function attachedText(){
+  const docs = attachments.filter(a => a.text).map(a => `--- ${a.name} ---\n${a.text.slice(0, 60000)}`).join("\n\n");
+  const imgs = attachments.filter(a => a.blob).length;
+  return (docs ? "\nUPLOADED DOCUMENTS\n" + docs + "\n" : "") + (imgs ? `\n${imgs} photo(s) are attached. Read them as part of the question.\n` : "");
+}
+
+const ASK_RULES = `You are Beni, a medical and nursing assistant for a nursing student. Answer whatever she asks the way a friendly senior nurse would explain it to a friend over coffee: simple, everyday words, not textbook language.
+
+HOW TO TALK
+- Use plain words a 15-year-old would understand. Say "the heart can't pump hard enough" before "reduced cardiac output".
+- When a medical term matters (she'll see it in exams), give the simple meaning first and the term after in brackets, once.
+- Short sentences. Short paragraphs. One idea at a time.
+- Use everyday comparisons where they help (kidneys like a filter, blood pressure like water in a hose).
+- No academic phrasing, no long words where a short one works, no walls of jargon.
+- Finish longer answers with a one or two line "In short:" summary.
+
+WHAT TO COVER
+
+- Cover anything: anatomy and physiology, pathophysiology, pharmacology (mechanism, indications, side effects, nursing considerations, contraindications), lab values and what they mean, ECGs, assessment, procedures, infection control, maternal and child health, mental health, ethics and law, NCLEX and exam questions, and general questions outside medicine too.
+- Lead with the direct answer, then the why. Keep it as short as the question allows; go deeper when asked.
+- Drug and dosage calculations: show the formula and every step, give the final answer with units, and say if the result is outside a usual safe range.
+- For exam-style multiple-choice questions, give the correct option first, then why it is right and why each other option is wrong.
+- Be accurate and current. Say when practice varies by country, hospital policy or guideline, and name the guideline (NICE, WHO, AHA, NMC, etc.) where useful. If you are unsure, say so plainly instead of guessing.
+- If the question is about a real person who seems to have urgent symptoms (chest pain, trouble breathing, signs of stroke, severe bleeding, overdose, suicidal thoughts), tell her first to call emergency services or get them seen now, then answer.
+- For a real patient on placement, remind her briefly that her mentor, the prescriber and local policy have the final say.
+- No filler, no "great question", no em dashes. Use Markdown headings or short lists only when they help.`;
+
+function buildAsk(){
+  return ASK_RULES + "\n\nQUESTION\n" + $("#question").value.trim() + "\n" + attachedText();
+}
+
+function buildPrompt(){
+  if(mode === "ask") return buildAsk();
+  const q = $("#question").value.trim();
+  const notes = $("#notes").value.trim();
+  const words = $("#words").value, cite = $("#cite").value, level = $("#level").value;
+  const docs = attachments.filter(a => a.text).map(a => `--- ${a.name} ---\n${a.text.slice(0, 60000)}`).join("\n\n");
+  const imgs = attachments.filter(a => a.blob).length;
+  return `You are helping a ${level} nursing student with her coursework.
+
+TASK
+${TASKS[mode]}
+
+HOW TO WRITE
+- Sound like a real ${level} nursing student wrote it, not a textbook: simple everyday words, short clear sentences mixed with a few longer ones, and a natural flow from one point to the next.
+- Explain things in plain language first. Use a medical term only where the assignment needs it, and make its meaning clear from the sentence. Never stack jargon.
+- Prefer short common words ("use" not "utilise", "help" not "facilitate", "because" not "due to the fact that").
+- No filler openings ("In today's healthcare landscape"), no stock phrases ("delve", "it is important to note", "plays a crucial role", "a testament to", "navigate the complexities"), no em dashes, no rhetorical "not X but Y" lines.
+- Prose tasks are paragraphs. Use lists only where a student really would (diagnoses, steps, a care plan).
+- Be clinically accurate and in line with current evidence-based practice. Use correct nursing terms and frameworks where they fit (nursing process/ADPIE, NANDA-I, SBAR, ABCDE, Maslow, Gibbs).
+- Build in the student's own points where given, so the work reflects her thinking.
+- Length: ${words === "match" ? "match whatever length the brief asks for" : "about " + words + " words, not counting references"}.
+- ${cite === "none" ? "No reference list." : `References in ${cite} style, in-text and a "References" section at the end. Only cite sources you are confident really exist (textbooks, NICE, WHO, NMC, major journals). Put [verify] after any reference whose details you are not certain of.`}
+- Output Markdown only: a # title, ## section headings, paragraphs. No preamble or closing remarks to me.
+
+${q ? "ASSIGNMENT / QUESTION\n" + q + "\n" : ""}${notes ? "\nSTUDENT'S OWN POINTS\n" + notes + "\n" : ""}${docs ? "\nUPLOADED DOCUMENTS\n" + docs + "\n" : ""}${imgs ? `\n${imgs} photo(s) of the assignment are attached. Read them as part of the brief.\n` : ""}`;
+}
+
+/* ---------- Claude ---------- */
+const use = name => window.claude?.use ? window.claude.use(name).catch(() => null) : Promise.resolve(null);
+use("sample").then(s => { sample = s; if(!s){ setStatus("Open this in Claude to write drafts"); $("#go").disabled = true; $("#redo").disabled = true; } });
+use("downloads").then(d => { downloads = d; });
+
+function setStatus(t){ statusEl.textContent = t; }
+const ERR = {
+  not_granted: "Beni needs permission to use Claude. Reload and choose Allow.",
+  sampling_disabled: "Claude isn't available on this account.",
+  rate_limited: "Too many requests right now. Wait a minute and try again.",
+  session_expired: "Sign in to Claude again, then retry.",
+  prompt_too_large: "That upload is too long. Try a shorter PDF or just the relevant pages.",
+  image_rejected: "One of the photos couldn't be read. Try a different one.",
+  images_unavailable: "Photos can't be sent from here. Type the question or upload a PDF.",
+  refused: "Claude wouldn't write that one. Try rewording the request.",
+};
+
+async function run(input, label){
+  if(!sample) return;
+  const imgs = attachments.filter(a => a.blob).map(a => a.blob);
+  ctl = new AbortController();
+  $("#go").disabled = true; $("#redo").disabled = true; $("#stop").hidden = false;
+  $("#exampleTag").hidden = true;
+  setStatus(label);
+  doc.innerHTML = prefix + '<p class="thinking">Thinking it through… this can take up to a minute for longer pieces.</p>';
+  try{
+    const res = await sample(input, {
+      signal: ctl.signal, cache: false, modelTier: mode === "ask" ? "default" : "complex",
+      ...(imgs.length ? { images: imgs } : {}),
+      onText: ({ text }) => { draftMd = text; render(text); }
+    });
+    draftMd = res.text; render(res.text); saveLocal();
+    if(Array.isArray(input)) turns = [...input, { role: "assistant", content: res.text }];
+    else turns = [{ role: "user", content: input }, { role: "assistant", content: res.text }];
+    setStatus(res.truncated ? "Cut short — ask for a shorter length" : "Draft ready");
+  }catch(e){
+    if(e.text){ draftMd = e.text; render(e.text); } else if(e.code !== "cancelled") doc.innerHTML = "";
+    setStatus(e.code === "cancelled" ? "Stopped" : (ERR[e.code] || "Something went wrong. Try again."));
+  }finally{
+    $("#go").disabled = false; $("#redo").disabled = false; $("#stop").hidden = true; ctl = null;
+  }
+}
+
+$("#go").onclick = () => {
+  if(!$("#question").value.trim() && !attachments.length){ setStatus("Type a question or upload the assignment first"); return; }
+  prefix = ""; turns = [];
+  run(buildPrompt(), mode === "ask" ? "Answering…" : mode === "explain" ? "Explaining…" : "Writing…");
+};
+$("#stop").onclick = () => ctl?.abort();
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+$("#redo").onclick = () => {
+  const ask = $("#change").value.trim();
+  const current = doc.innerText.trim();
+  if(!ask){ setStatus("Type your follow-up first"); return; }
+  if(mode === "ask" || mode === "explain"){
+    // Keep the conversation going: earlier answers stay on the page, new one goes below.
+    const history = turns.length ? turns.slice(-12) : (current ? [{ role: "user", content: ASK_RULES }, { role: "assistant", content: current }] : [{ role: "user", content: ASK_RULES }]);
+    if(turns.length && history[0] !== turns[0]) history.unshift(turns[0]); // always keep the original instructions
+    prefix = doc.innerHTML + `<hr><h2>${esc(ask)}</h2>`;
+    run([...history, { role: "user", content: ask }], "Answering…");
+  } else {
+    if(!current){ setStatus("Write a draft first"); return; }
+    prefix = "";
+    run([{ role: "user", content: buildPrompt() }, { role: "assistant", content: current }, { role: "user", content: "Revise the whole piece: " + ask + "\nKeep the same voice and rules. Output the full revised Markdown only." }], "Revising…");
+  }
+  $("#change").value = "";
+};
+$("#change").onkeydown = e => { if(e.key === "Enter") $("#redo").click(); };
+
+/* ---------- copy ---------- */
+$("#copy").onclick = () => {
+  const t = doc.innerText;
+  navigator.clipboard.writeText(t).then(() => setStatus("Copied"), () => {
+    const r = document.createRange(); r.selectNodeContents(doc); const s = getSelection(); s.removeAllRanges(); s.addRange(r); setStatus("Selected — press Ctrl+C");
+  });
+};
+
+/* ---------- PDF ---------- */
+function clean(t){ return t.replace(/ /g, " ").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/–|—/g, "-").replace(/₂/g, "2").replace(/\s+\n/g, "\n").trim(); }
+
+function buildPdf(){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight(), M = 64, maxW = W - M * 2;
+  let y = M;
+  const need = h => { if(y + h > H - M){ pdf.addPage(); y = M; } };
+  const write = (text, { size = 12, style = "normal", gap = 8, indent = 0, lead = 1.5, prefix = "" } = {}) => {
+    pdf.setFont("times", style); pdf.setFontSize(size);
+    const lines = pdf.splitTextToSize(clean(text), maxW - indent);
+    lines.forEach((ln, i) => {
+      need(size * lead);
+      if(i === 0 && prefix) pdf.text(prefix, M + indent - 14, y);
+      pdf.text(ln, M + indent, y); y += size * lead;
+    });
+    y += gap;
+  };
+  const walk = el => {
+    for(const n of el.children){
+      const tag = n.tagName.toLowerCase(), t = n.innerText || n.textContent || "";
+      if(!t.trim()) continue;
+      if(tag === "h1"){ write(t, { size: 18, style: "bold", gap: 10, lead: 1.3 }); }
+      else if(tag === "h2"){ y += 6; write(t, { size: 14, style: "bold", gap: 4, lead: 1.3 }); }
+      else if(tag === "h3" || tag === "h4"){ y += 4; write(t, { size: 12, style: "bold", gap: 2 }); }
+      else if(tag === "ul" || tag === "ol"){
+        [...n.children].forEach((li, i) => write(li.innerText, { indent: 18, gap: 3, prefix: tag === "ol" ? (i + 1) + "." : "•" }));
+        y += 5;
+      }
+      else if(tag === "table"){
+        [...n.querySelectorAll("tr")].forEach(tr => write([...tr.children].map(c => c.innerText.trim()).join("  |  "), { size: 10.5, gap: 4 }));
+        y += 6;
+      }
+      else if(tag === "blockquote"){ write(t, { style: "italic", indent: 18 }); }
+      else if(tag === "div" || tag === "section"){ walk(n); }
+      else { write(t); }
+    }
+  };
+  walk(doc);
+  const pages = pdf.getNumberOfPages();
+  for(let i = 1; i <= pages; i++){ pdf.setPage(i); pdf.setFont("times", "normal"); pdf.setFontSize(9); pdf.text(String(i), W / 2, H - 32, { align: "center" }); }
+  return pdf;
+}
+
+$("#pdf").onclick = async () => {
+  if(!doc.innerText.trim()){ setStatus("Nothing to save yet"); return; }
+  const title = (doc.querySelector("h1")?.innerText || "Beni draft").replace(/[\\/:*?"<>|]+/g, "").slice(0, 80).trim() || "Beni draft";
+  if(!downloads){ setStatus("Saving isn't available here — use Copy instead"); return; }
+  try{
+    const blob = buildPdf().output("blob");
+    await downloads.save({ filename: title + ".pdf", data: blob });
+    setStatus("PDF saved");
+  }catch(e){
+    setStatus(e && e.code === "declined" ? "Save cancelled" : "Couldn't save the PDF. Try again.");
+    console.error(e);
+  }
+};
+</script>
