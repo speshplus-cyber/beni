@@ -1,5 +1,6 @@
 <title>Beni</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="beni-logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -165,6 +166,10 @@ textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible
       <div class="actions">
         <button class="btn" id="go" type="button">Ask Beni</button>
         <button class="btn ghost" id="stop" type="button" hidden>Stop</button>
+      </div>
+      <div id="passRow" hidden>
+        <label class="label" for="pass">Access code</label>
+        <input id="pass" type="password" autocomplete="off" placeholder="The code set up for this site">
       </div>
       <p class="note">Read it through and put it in her own words before handing it in. She'll need this knowledge for exams and on the ward, and most nursing schools treat submitted AI work as misconduct.</p>
     </section>
@@ -366,9 +371,57 @@ ${q ? "ASSIGNMENT / QUESTION\n" + q + "\n" : ""}${notes ? "\nSTUDENT'S OWN POINT
 }
 
 /* ---------- Claude ---------- */
+// Inside Claude the page uses Claude directly; on its own website (Vercel) it calls /api/ask.
 const use = name => window.claude?.use ? window.claude.use(name).catch(() => null) : Promise.resolve(null);
-use("sample").then(s => { sample = s; if(!s){ setStatus("Open this in Claude to write drafts"); $("#go").disabled = true; $("#redo").disabled = true; } });
+use("sample").then(s => { sample = s || serverSample; });
 use("downloads").then(d => { downloads = d; });
+
+function getPass(){ try{ return localStorage.getItem("beni.pass") || ""; }catch(e){ return ""; } }
+$("#pass").addEventListener("change", () => { try{ localStorage.setItem("beni.pass", $("#pass").value.trim()); }catch(e){} });
+
+async function toImagePart(blob){
+  // Shrink photos before upload so requests stay small.
+  const bmp = await createImageBitmap(blob);
+  const k = Math.min(1, 1568 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  return { media_type: "image/jpeg", data: c.toDataURL("image/jpeg", 0.85).split(",")[1] };
+}
+
+async function serverSample(input, opts = {}){
+  const messages = typeof input === "string" ? [{ role: "user", content: input }] : input;
+  const images = opts.images ? await Promise.all([...opts.images].map(toImagePart)) : [];
+  let res;
+  try{
+    res = await fetch("/api/ask", {
+      method: "POST", signal: opts.signal,
+      headers: { "Content-Type": "application/json", "x-beni-passcode": getPass() },
+      body: JSON.stringify({ messages, images, tier: opts.modelTier })
+    });
+  }catch(e){ throw { code: e.name === "AbortError" ? "cancelled" : "upstream_error" }; }
+  if(res.status === 401) throw { code: "passcode" };
+  if(res.status === 413) throw { code: "prompt_too_large" };
+  if(!res.ok) throw { code: res.status === 429 ? "rate_limited" : "upstream_error" };
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  const tail = /\n*\[\[BENI_ERR:[a-z_]*\]?\]?$|\n*\[\[?$/;
+  let text = "";
+  try{
+    for(;;){
+      const { done, value } = await reader.read(); if(done) break;
+      text += dec.decode(value, { stream: true });
+      const shown = text.replace(tail, "");
+      if(shown.trim()) opts.onText?.({ text: shown });
+    }
+  }catch(e){ throw { code: opts.signal?.aborted ? "cancelled" : "upstream_error", text }; }
+  const m = text.match(/\n*\[\[BENI_ERR:([a-z_]+)\]\]\s*$/);
+  if(m){
+    text = text.slice(0, m.index).trimEnd();
+    if(m[1] === "truncated") return { text, truncated: true };
+    throw { code: m[1], text: m[1] === "refused" || !text ? undefined : text };
+  }
+  if(!text.trim()) throw { code: "empty_completion" };
+  return { text, truncated: false };
+}
 
 function setStatus(t){ statusEl.textContent = t; }
 const ERR = {
@@ -380,6 +433,9 @@ const ERR = {
   image_rejected: "One of the photos couldn't be read. Try a different one.",
   images_unavailable: "Photos can't be sent from here. Type the question or upload a PDF.",
   refused: "Claude wouldn't write that one. Try rewording the request.",
+  passcode: "Enter the access code below, then try again.",
+  server_key: "The server's API key isn't set up. Check ANTHROPIC_API_KEY in Vercel.",
+  upstream_error: "Couldn't reach Beni's server. Check your connection and try again.",
 };
 
 async function run(input, label){
@@ -403,6 +459,7 @@ async function run(input, label){
   }catch(e){
     if(e.text){ draftMd = e.text; render(e.text); } else if(e.code !== "cancelled") doc.innerHTML = "";
     setStatus(e.code === "cancelled" ? "Stopped" : (ERR[e.code] || "Something went wrong. Try again."));
+    if(e.code === "passcode"){ $("#passRow").hidden = false; $("#pass").focus(); }
   }finally{
     $("#go").disabled = false; $("#redo").disabled = false; $("#stop").hidden = true; ctl = null;
   }
@@ -490,10 +547,14 @@ function buildPdf(){
 $("#pdf").onclick = async () => {
   if(!doc.innerText.trim()){ setStatus("Nothing to save yet"); return; }
   const title = (doc.querySelector("h1")?.innerText || "Beni draft").replace(/[\\/:*?"<>|]+/g, "").slice(0, 80).trim() || "Beni draft";
-  if(!downloads){ setStatus("Saving isn't available here — use Copy instead"); return; }
   try{
     const blob = buildPdf().output("blob");
-    await downloads.save({ filename: title + ".pdf", data: blob });
+    if(downloads) await downloads.save({ filename: title + ".pdf", data: blob });
+    else {
+      const url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = title + ".pdf"; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
     setStatus("PDF saved");
   }catch(e){
     setStatus(e && e.code === "declined" ? "Save cancelled" : "Couldn't save the PDF. Try again.");

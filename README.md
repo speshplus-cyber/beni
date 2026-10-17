@@ -14,11 +14,28 @@ A medical and nursing assistant for nursing students. Ask any health or nursing 
 
 ## How it runs
 
-`beni.html` is a single page published as a Claude artifact. It calls Claude through the artifact runtime (`window.claude.use("sample")`) and saves PDFs through `window.claude.use("downloads")`, so answers only work when the page is opened inside Claude. Opened on its own in a browser, the page loads but the Ask and Save buttons are disabled.
+The same page works in two places:
+
+- **On Vercel (its own website):** the page sends questions to `api/ask.js`, a serverless function that calls the Claude API with your Anthropic API key and streams the answer back.
+- **Inside Claude (as a Claude artifact):** the page uses the viewer's own Claude account instead, and no server is needed.
+
+## Deploy to Vercel
+
+1. Get an API key at [console.anthropic.com](https://console.anthropic.com) and add some credit. Each question costs a few cents, paid from that account.
+2. On [vercel.com](https://vercel.com), choose **Add New → Project**, import `speshplus-cyber/beni`, and leave the build settings as they are (no framework, no build command).
+3. Under **Environment Variables**, add:
+   - `ANTHROPIC_API_KEY`: your key (required)
+   - `BENI_PASSCODE`: an access code (strongly recommended, so strangers who find the link can't spend your credit)
+   - `BENI_MODEL`: optional. Defaults to `claude-opus-5-5`. Set `claude-sonnet-5-5` or `claude-haiku-5-5` to make it cheaper.
+4. Click **Deploy**. The site opens at `https://<project>.vercel.app`.
+
+If you set a passcode, the page asks for it the first time and remembers it on that device.
 
 ## Files
 
-- `beni.html`: the app
+- `beni.html`: the app (served at `/`)
+- `api/ask.js`: the Vercel function that talks to Claude
+- `vercel.json`: routes `/` to the app and gives the function up to 5 minutes for long drafts
 - `beni-logo.svg`: the logo
 
 ## Note

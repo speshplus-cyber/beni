@@ -1,0 +1,6 @@
+{
+  "rewrites": [{ "source": "/", "destination": "/beni.html" }],
+  "functions": {
+    "api/ask.js": { "maxDuration": 300 }
+  }
+}
