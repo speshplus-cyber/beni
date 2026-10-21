@@ -79,6 +79,27 @@ textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible
 .revise input{flex:1 1 220px;min-width:0}
 .wc{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .note{font-size:13px;color:var(--muted);border-left:3px solid var(--accent);padding:2px 0 2px 10px;margin:0}
+/* Slide editor: slides are drawn at true 16:9 and scale with their width. Slide colors come from the chosen deck look, not the page theme. */
+.deck{display:grid;gap:22px;padding:16px}
+.scard{display:grid;gap:8px;min-width:0}
+.shead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.snum{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.05em}
+.stools{display:flex;gap:4px;flex-wrap:wrap}
+.stools button{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:7px;padding:4px 9px;font:inherit;font-size:13px;cursor:pointer}
+.stools button:disabled{opacity:.4;cursor:default}
+.slide{aspect-ratio:16/9;width:100%;max-width:100%;border-radius:6px;overflow:hidden;position:relative;container-type:inline-size;border:1px solid var(--line);font-family:Calibri,Carlito,"Segoe UI",system-ui,sans-serif}
+.slide .bar{position:absolute;inset:0 0 auto 0;height:2.1cqw}
+.slide h3{margin:0;font-size:5cqw;line-height:1.15;font-weight:700;outline:none;position:absolute;left:6cqw;right:6cqw;top:5.5cqw}
+.slide ul{position:absolute;left:7cqw;right:6cqw;top:19cqw;bottom:6cqw;margin:0;padding-left:3cqw;font-size:3cqw;line-height:1.35;outline:none;overflow:hidden}
+.slide li{margin-bottom:1.3cqw}
+.slide.title h3{top:auto;bottom:24cqw;font-size:6.6cqw}
+.slide.title ul{top:auto;bottom:9cqw;height:12cqw;list-style:none;padding-left:0;font-size:3.1cqw}
+.slide .pg{position:absolute;right:3cqw;bottom:2.2cqw;font-size:1.7cqw;opacity:.6}
+.slide [contenteditable]:focus{box-shadow:0 0 0 2px rgba(120,160,150,.55);border-radius:3px}
+.snotes{min-height:56px;font-size:14px}
+.sredo{display:flex;gap:6px;flex-wrap:wrap}
+.sredo input{flex:1 1 200px;min-width:0;padding:7px 10px;font-size:14px}
+.sredo button{padding:7px 12px;font-size:14px}
 @media (prefers-reduced-motion:no-preference){.btn,.modes button{transition:background .15s,border-color .15s}}
 </style>
 
@@ -111,6 +132,7 @@ textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible
           <button type="button" data-mode="case" aria-pressed="false">Case study</button>
           <button type="button" data-mode="reflection" aria-pressed="false">Reflection</button>
           <button type="button" data-mode="explain" aria-pressed="false">Explain it to me</button>
+          <button type="button" data-mode="slides" aria-pressed="false">PowerPoint slides</button>
         </div>
       </div>
 
@@ -132,7 +154,17 @@ textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible
       </div>
 
       <div class="row">
-        <div>
+        <div id="slidesBox" hidden>
+          <label class="label" for="slideCount">Slides</label>
+          <select id="slideCount">
+            <option value="6">6 slides</option>
+            <option value="8">8 slides</option>
+            <option value="10" selected>10 slides</option>
+            <option value="12">12 slides</option>
+            <option value="15">15 slides</option>
+          </select>
+        </div>
+        <div id="wordsBox">
           <label class="label" for="words">Length</label>
           <select id="words">
             <option value="300">~300 words</option>
@@ -175,7 +207,7 @@ textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible
     </section>
 
     <!-- Draft -->
-    <section class="paper" aria-label="Draft">
+    <section class="paper" id="paperView" aria-label="Draft">
       <div class="paperbar">
         <div class="actions"><span class="example" id="exampleTag">Example draft</span><span class="wc" id="wc"></span></div>
         <div class="actions">
@@ -190,6 +222,31 @@ textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible
         <button class="btn ghost" id="redo" type="button">Ask</button>
       </div>
     </section>
+
+    <!-- Slide deck editor -->
+    <section class="paper" id="deckView" aria-label="Slides" hidden>
+      <div class="paperbar">
+        <div class="actions"><span class="example" id="deckExample">Example slides</span><span class="wc" id="deckCount"></span></div>
+        <div class="actions">
+          <label class="label" for="theme" style="margin:0">Look</label>
+          <select id="theme" style="width:auto">
+            <option value="clinical">Clinical teal</option>
+            <option value="navy">Hospital navy</option>
+            <option value="plum">Plum</option>
+            <option value="mono">Clean grey</option>
+          </select>
+          <button class="btn" id="pptx" type="button">Download PowerPoint</button>
+        </div>
+      </div>
+      <p class="hint" style="padding:12px 16px 0">Click any title, bullet or note to edit it. Press Enter in the bullets for a new point.</p>
+      <div class="deck" id="deck"></div>
+      <div class="actions" style="padding:0 16px 14px"><button class="btn ghost" id="addSlide" type="button">+ Add slide</button></div>
+      <div class="revise">
+        <label class="label" for="deckChange" style="flex-basis:100%;margin:0">Change the whole deck</label>
+        <input id="deckChange" placeholder="e.g. fewer words per slide, add a slide on nursing care, make it 8 slides">
+        <button class="btn ghost" id="deckRedo" type="button">Update slides</button>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -198,6 +255,7 @@ textarea:focus,input:focus,select:focus,button:focus-visible,.drop:focus-visible
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const statusEl = $("#status"), doc = $("#doc");
@@ -244,8 +302,14 @@ $("#modes").addEventListener("click", e => {
   mode = b.dataset.mode;
   document.querySelectorAll("#modes button").forEach(x => x.setAttribute("aria-pressed", x === b));
   $("#go").textContent = mode === "ask" ? "Ask Beni" : mode === "explain" ? "Explain it" : "Write draft";
-  setFollowUp();
+  setFollowUp(); applyMode();
 });
+function applyMode(){
+  const s = mode === "slides";
+  $("#paperView").hidden = s; $("#deckView").hidden = !s;
+  $("#slidesBox").hidden = !s; $("#wordsBox").hidden = s;
+  if(s){ $("#go").textContent = "Make slides"; if(!deck) loadDeck(); }
+}
 function setFollowUp(){
   const chat = mode === "ask" || mode === "explain";
   $("#changeLabel").textContent = chat ? "Ask a follow-up" : "Change something";
@@ -467,6 +531,7 @@ async function run(input, label){
 
 $("#go").onclick = () => {
   if(!$("#question").value.trim() && !attachments.length){ setStatus("Type a question or upload the assignment first"); return; }
+  if(mode === "slides") return buildDeck();
   prefix = ""; turns = [];
   run(buildPrompt(), mode === "ask" ? "Answering…" : mode === "explain" ? "Explaining…" : "Writing…");
 };
@@ -549,15 +614,251 @@ $("#pdf").onclick = async () => {
   const title = (doc.querySelector("h1")?.innerText || "Beni draft").replace(/[\\/:*?"<>|]+/g, "").slice(0, 80).trim() || "Beni draft";
   try{
     const blob = buildPdf().output("blob");
-    if(downloads) await downloads.save({ filename: title + ".pdf", data: blob });
-    else {
-      const url = URL.createObjectURL(blob), a = document.createElement("a");
-      a.href = url; a.download = title + ".pdf"; document.body.append(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
+    await saveBlob(blob, title + ".pdf");
     setStatus("PDF saved");
   }catch(e){
     setStatus(e && e.code === "declined" ? "Save cancelled" : "Couldn't save the PDF. Try again.");
+    console.error(e);
+  }
+};
+
+/* ---------- saving files ---------- */
+async function saveBlob(blob, filename){
+  if(downloads) return downloads.save({ filename, data: blob });
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/* ---------- slides ---------- */
+const THEMES = {
+  clinical: { bg: "FFFFFF", ink: "1E2B30", accent: "1C6B5A", titleBg: "1C6B5A", titleInk: "FFFFFF", sub: "CDEBE2" },
+  navy:     { bg: "FFFFFF", ink: "1B2333", accent: "1F3A68", titleBg: "1F3A68", titleInk: "FFFFFF", sub: "C9D6EE" },
+  plum:     { bg: "FFFFFF", ink: "2A1E28", accent: "6B2C5A", titleBg: "6B2C5A", titleInk: "FFFFFF", sub: "EBD3E4" },
+  mono:     { bg: "FFFFFF", ink: "222222", accent: "3A3A3A", titleBg: "F2F2F2", titleInk: "1A1A1A", sub: "555555" },
+};
+const EXAMPLE_DECK = { title: "Heart Failure: Spotting and Managing Fluid Overload", theme: "clinical", example: true, slides: [
+  { title: "Heart Failure: Spotting and Managing Fluid Overload", bullets: ["Year 2 nursing presentation"], notes: "Hi everyone. Today I'm talking about what happens when a patient with heart failure gets overloaded with fluid, and what we do as nurses." },
+  { title: "What is heart failure?", bullets: ["The heart can't pump as well as it should", "Blood backs up into the lungs and body", "The body holds on to extra salt and water"], notes: "Put simply, the heart is a pump that's getting tired. When it can't keep up, fluid starts to build up where it shouldn't." },
+  { title: "Signs to look for", bullets: ["Breathless, worse lying flat", "Crackles at the base of the lungs", "Swollen ankles (pitting oedema)", "Weight up more than 2 kg in a few days"], notes: "These are the things I'd look and listen for at the bedside. Daily weights are one of the easiest ways to catch it early." },
+]};
+let deck = null, deckBusy = false;
+const hex = c => "#" + c;
+
+function saveDeck(){ try{ localStorage.setItem("beni.deck", JSON.stringify(deck)); }catch(e){} }
+function loadDeck(){
+  try{ const d = JSON.parse(localStorage.getItem("beni.deck") || "null"); if(d?.slides?.length) deck = d; }catch(e){}
+  if(!deck) deck = JSON.parse(JSON.stringify(EXAMPLE_DECK));
+  renderDeck();
+}
+
+function slideHtml(s, i, t){
+  const title = i === 0;
+  const bg = title ? t.titleBg : t.bg, ink = title ? t.titleInk : t.ink;
+  const items = (s.bullets.length ? s.bullets : [""]).map(b => `<li>${esc(b)}</li>`).join("");
+  return `<div class="slide${title ? " title" : ""}" style="background:${hex(bg)};color:${hex(ink)}">
+    ${title ? "" : `<div class="bar" style="background:${hex(t.accent)}"></div>`}
+    <h3 contenteditable="true" spellcheck="true" data-f="title" style="color:${hex(title ? t.titleInk : t.accent)}">${esc(s.title)}</h3>
+    <ul contenteditable="true" spellcheck="true" data-f="bullets" style="${title ? "color:" + hex(t.sub) : ""}">${items}</ul>
+    ${title ? "" : `<span class="pg">${i + 1}</span>`}
+  </div>`;
+}
+
+function renderDeck(){
+  const t = THEMES[deck.theme] || THEMES.clinical, box = $("#deck");
+  $("#theme").value = deck.theme || "clinical";
+  $("#deckExample").hidden = !deck.example;
+  $("#deckCount").textContent = deck.slides.length + " slides";
+  box.innerHTML = "";
+  deck.slides.forEach((s, i) => {
+    const card = document.createElement("div"); card.className = "scard"; card.dataset.i = i;
+    card.innerHTML = `<div class="shead"><span class="snum">SLIDE ${i + 1}${i === 0 ? " · TITLE" : ""}</span>
+        <div class="stools">
+          <button type="button" data-act="up" ${i === 0 ? "disabled" : ""} aria-label="Move slide up">↑</button>
+          <button type="button" data-act="down" ${i === deck.slides.length - 1 ? "disabled" : ""} aria-label="Move slide down">↓</button>
+          <button type="button" data-act="dup">Duplicate</button>
+          <button type="button" data-act="del" ${deck.slides.length < 2 ? "disabled" : ""}>Delete</button>
+        </div></div>
+      ${slideHtml(s, i, t)}
+      <label class="label" for="notes${i}" style="margin:0">Speaker notes</label>
+      <textarea class="snotes" id="notes${i}" data-f="notes">${esc(s.notes || "")}</textarea>
+      <div class="sredo"><input id="sredo${i}" placeholder="Change just this slide, e.g. add an example, simpler words"><button class="btn ghost" type="button" data-act="redo">Redo slide</button></div>`;
+    box.append(card);
+  });
+}
+
+function syncDeck(){
+  // Read every edit the student made back out of the page.
+  document.querySelectorAll("#deck .scard").forEach(card => {
+    const s = deck.slides[+card.dataset.i]; if(!s) return;
+    s.title = card.querySelector('[data-f="title"]').innerText.trim();
+    const ul = card.querySelector('[data-f="bullets"]');
+    const lis = [...ul.querySelectorAll("li")];
+    s.bullets = (lis.length ? lis.map(li => li.innerText) : ul.innerText.split("\n")).map(b => b.trim()).filter(Boolean);
+    s.notes = card.querySelector('[data-f="notes"]').value.trim();
+  });
+  saveDeck();
+}
+$("#deck").addEventListener("input", () => { if(deck.example){ deck.example = false; $("#deckExample").hidden = true; } syncDeck(); });
+
+$("#deck").addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if(!b || deckBusy) return;
+  syncDeck();
+  const i = +b.closest(".scard").dataset.i, sl = deck.slides, act = b.dataset.act;
+  if(act === "redo") return redoSlide(i);
+  if(act === "up" && i > 0) [sl[i - 1], sl[i]] = [sl[i], sl[i - 1]];
+  if(act === "down" && i < sl.length - 1) [sl[i + 1], sl[i]] = [sl[i], sl[i + 1]];
+  if(act === "dup") sl.splice(i + 1, 0, JSON.parse(JSON.stringify(sl[i])));
+  if(act === "del" && sl.length > 1) sl.splice(i, 1);
+  deck.example = false; saveDeck(); renderDeck();
+});
+$("#addSlide").onclick = () => {
+  syncDeck();
+  deck.slides.push({ title: "New slide", bullets: ["First point"], notes: "" });
+  deck.example = false; saveDeck(); renderDeck();
+  $("#deck").lastElementChild?.querySelector("h3")?.focus();
+};
+$("#theme").onchange = () => { syncDeck(); deck.theme = $("#theme").value; saveDeck(); renderDeck(); };
+
+function parseJSON(t){
+  try{ return JSON.parse(t); }catch(e){}
+  const f = t.match(/```(?:json)?\s*([\s\S]*?)```/); if(f) try{ return JSON.parse(f[1]); }catch(e){}
+  const a = t.indexOf("{"), z = t.lastIndexOf("}");
+  if(a >= 0 && z > a) try{ return JSON.parse(t.slice(a, z + 1)); }catch(e){}
+  throw { code: "invalid_json" };
+}
+const cleanSlide = s => ({ title: String(s?.title || "Untitled").trim(), bullets: (Array.isArray(s?.bullets) ? s.bullets : []).map(b => String(b).trim()).filter(Boolean).slice(0, 8), notes: String(s?.notes || "").trim() });
+
+const SLIDE_RULES = () => {
+  const cite = $("#cite").value, level = $("#level").value;
+  return `WRITING RULES
+- Simple everyday words, not textbook language. Use a medical term only where it matters, with its plain meaning.
+- Bullets are short phrases, about 12 words at most, 3 to 5 per slide. No paragraphs on slides.
+- Clinically accurate and in line with current evidence-based practice, at a ${level} nursing level.
+- Speaker notes: 2 to 4 sentences of what she would actually say out loud, in a relaxed, natural spoken voice.
+- No em dashes, no filler, no emoji.
+${cite === "none" ? "" : `- End with a "References" slide listing 3 to 6 real sources in ${cite} style as bullets. Only cite sources you are confident exist; put [verify] after any you are unsure of.`}`;
+};
+
+async function deckCall(prompt, label){
+  if(!sample || deckBusy) return null;
+  deckBusy = true; ctl = new AbortController();
+  $("#go").disabled = true; $("#deckRedo").disabled = true; $("#stop").hidden = false;
+  setStatus(label);
+  try{
+    const imgs = attachments.filter(a => a.blob).map(a => a.blob);
+    const res = await sample(prompt, {
+      signal: ctl.signal, cache: false, modelTier: "complex",
+      ...(imgs.length ? { images: imgs } : {}),
+      onText: ({ text }) => { const n = (text.match(/"title"\s*:/g) || []).length; setStatus(n ? `${label} (${n} written)` : label); }
+    });
+    return parseJSON(res.text);
+  }catch(e){
+    setStatus(e.code === "cancelled" ? "Stopped" : e.code === "invalid_json" ? "The slides came back garbled. Try again." : (ERR[e.code] || "Something went wrong. Try again."));
+    if(e.code === "passcode"){ $("#passRow").hidden = false; $("#pass").focus(); }
+    return null;
+  }finally{
+    deckBusy = false; ctl = null;
+    $("#go").disabled = false; $("#deckRedo").disabled = false; $("#stop").hidden = true;
+  }
+}
+
+async function buildDeck(){
+  const n = $("#slideCount").value, notes = $("#notes").value.trim(), q = $("#question").value.trim();
+  const prompt = `You are making a PowerPoint presentation for a nursing student to present in class.
+
+Make ${n} slides in total. Slide 1 is the title slide: the presentation title, and one short bullet as a subtitle line. The rest are content slides that tell a clear story from start to finish.
+
+${SLIDE_RULES()}
+- Build in the student's own points where given.
+
+Reply with only JSON in this exact shape:
+{"title": "deck title", "slides": [{"title": "slide title", "bullets": ["point", "point"], "notes": "what to say"}]}
+
+${q ? "TOPIC / ASSIGNMENT\n" + q + "\n" : ""}${notes ? "\nSTUDENT'S OWN POINTS\n" + notes + "\n" : ""}${attachedText()}`;
+  const out = await deckCall(prompt, "Making slides…");
+  if(!out?.slides?.length){ if(out) setStatus("No slides came back. Try again."); return; }
+  deck = { title: String(out.title || out.slides[0]?.title || "Presentation"), theme: $("#theme").value || "clinical", slides: out.slides.map(cleanSlide) };
+  saveDeck(); renderDeck(); setStatus("Slides ready. Click anything to edit.");
+}
+
+$("#deckRedo").onclick = async () => {
+  const ask = $("#deckChange").value.trim(); if(!ask){ setStatus("Type what to change first"); return; }
+  syncDeck();
+  const prompt = `Here is a nursing student's PowerPoint deck as JSON. Change it as she asks and return the whole updated deck.
+
+HER REQUEST
+${ask}
+
+${SLIDE_RULES()}
+- Keep any wording she has already edited unless the request says otherwise.
+
+Reply with only JSON in the same shape: {"title": "...", "slides": [{"title": "...", "bullets": ["..."], "notes": "..."}]}
+
+CURRENT DECK
+${JSON.stringify({ title: deck.title, slides: deck.slides })}`;
+  const out = await deckCall(prompt, "Updating slides…");
+  if(!out?.slides?.length) return;
+  deck.title = String(out.title || deck.title); deck.slides = out.slides.map(cleanSlide); deck.example = false;
+  $("#deckChange").value = ""; saveDeck(); renderDeck(); setStatus("Slides updated");
+};
+$("#deckChange").onkeydown = e => { if(e.key === "Enter") $("#deckRedo").click(); };
+
+async function redoSlide(i){
+  const ask = $("#sredo" + i).value.trim() || "Make this slide clearer and simpler.";
+  const prompt = `This is slide ${i + 1} of a nursing student's PowerPoint titled "${deck.title}". Rewrite just this slide as she asks.
+
+HER REQUEST
+${ask}
+
+${SLIDE_RULES().replace(/\n- End with a "References"[^\n]*/, "")}
+
+The other slides, for context: ${deck.slides.map((s, k) => (k + 1) + ". " + s.title).join("; ")}
+
+Reply with only JSON: {"title": "...", "bullets": ["..."], "notes": "..."}
+
+CURRENT SLIDE
+${JSON.stringify(deck.slides[i])}`;
+  const out = await deckCall(prompt, `Redoing slide ${i + 1}…`);
+  if(!out) return;
+  deck.slides[i] = cleanSlide(out.slides?.[0] || out); deck.example = false;
+  saveDeck(); renderDeck(); setStatus(`Slide ${i + 1} updated`);
+}
+
+function buildPptx(){
+  const t = THEMES[deck.theme] || THEMES.clinical;
+  const p = new PptxGenJS();
+  p.layout = "LAYOUT_16x9"; p.title = deck.title; p.author = "Beni";
+  const font = "Calibri";
+  deck.slides.forEach((s, i) => {
+    const sl = p.addSlide();
+    if(i === 0){
+      sl.background = { color: t.titleBg };
+      sl.addText(s.title, { x: 0.7, y: 1.2, w: 8.6, h: 1.9, fontFace: font, fontSize: 38, bold: true, color: t.titleInk, valign: "bottom", fit: "shrink" });
+      if(s.bullets.length) sl.addText(s.bullets.join("\n"), { x: 0.7, y: 3.25, w: 8.6, h: 1.1, fontFace: font, fontSize: 18, color: t.sub, valign: "top" });
+    } else {
+      sl.background = { color: t.bg };
+      sl.addShape("rect", { x: 0, y: 0, w: 10, h: 0.12, fill: { color: t.accent }, line: { color: t.accent } });
+      sl.addText(s.title, { x: 0.6, y: 0.3, w: 8.8, h: 0.95, fontFace: font, fontSize: 28, bold: true, color: t.accent, valign: "middle", fit: "shrink" });
+      if(s.bullets.length) sl.addText(
+        s.bullets.map((b, k) => ({ text: b, options: { bullet: true, paraSpaceAfter: 10, breakLine: k < s.bullets.length - 1 } })),
+        { x: 0.7, y: 1.4, w: 8.6, h: 3.75, fontFace: font, fontSize: 20, color: t.ink, valign: "top", fit: "shrink" });
+      sl.addText(String(i + 1), { x: 9.1, y: 5.15, w: 0.6, h: 0.3, fontFace: font, fontSize: 10, color: "8A9A9E", align: "right" });
+    }
+    if(s.notes) sl.addNotes(s.notes);
+  });
+  return p.write({ outputType: "blob" });
+}
+
+$("#pptx").onclick = async () => {
+  if(!window.PptxGenJS){ setStatus("The PowerPoint maker didn't load. Reload the page."); return; }
+  syncDeck();
+  const name = (deck.title || "Beni slides").replace(/[\\/:*?"<>|]+/g, "").slice(0, 80).trim() || "Beni slides";
+  try{
+    await saveBlob(await buildPptx(), name + ".pptx");
+    setStatus("PowerPoint saved");
+  }catch(e){
+    setStatus(e && e.code === "declined" ? "Save cancelled" : "Couldn't save the PowerPoint. Try again.");
     console.error(e);
   }
 };

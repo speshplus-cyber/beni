@@ -11,6 +11,7 @@ A medical and nursing assistant for nursing students. Ask any health or nursing 
 - **Uploads**: PDFs (text is read in the browser with pdf.js), text files and photos.
 - **Options**: length, reference style (APA 7, Harvard, Vancouver) and year of study.
 - **Editable draft** with word count, copy, and Save as PDF (jsPDF).
+- **PowerPoint slides**: builds a deck from a topic or upload. Every title, bullet and speaker note can be edited in the page; slides can be reordered, duplicated, deleted, or redone one at a time or all together; pick a look and download a real .pptx (PptxGenJS).
 
 ## How it runs
 
